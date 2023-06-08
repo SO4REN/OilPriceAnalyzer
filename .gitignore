@@ -1,7 +1,7 @@
 # Resources not yet used
 spark/*
 elasticsearch/*
-kafka/*
+#kafka/*
 
 
 # Random stuff

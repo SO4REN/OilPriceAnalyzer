@@ -1,16 +1,81 @@
+version: '3.7'
+
 services:
+
   logstash:
+    build: $PWD/logstash/
     image: tap:logstash
     container_name: logstash
-    user: root              # TEMP FOR FILE WRITING
+    #user: root              # TEMP FOR FILE WRITING
     environment:
       - XPACK_MONITORING_ENABLED=false
+      - KAFKA_OUTPUT_BOOTSTRAP_SERVERS=kafkaServer:9092
+      - KAFKA_OUTPUT_TOPIC=prices
     networks:
       tap:
         ipv4_address: 10.0.100.10
     volumes:
       - $PWD/logstash/pipeline/http_poller_csv.conf:/usr/share/logstash/pipeline/logstash.conf
-      - $PWD/input/:/tmp/output/
+    depends_on:
+      kafkaTopic:
+        condition: service_completed_successfully
+
+
+  zookeeper:
+    build: $PWD/kafka/
+    image: tap:kafka
+    container_name: kafkaZk
+    networks:
+      tap:
+        ipv4_address: 10.0.100.22
+    ports:
+      - 2181:2181
+    environment:
+      - KAFKA_ACTION=start-zk
+
+
+  kafkaServer:
+    build: $PWD/kafka/
+    image: tap:kafka
+    container_name: kafkaServer
+    networks:
+      tap:
+        ipv4_address: 10.0.100.23
+    ports:
+      - 9092:9092
+    environment:
+      - KAFKA_ACTION=start-kafka
+    depends_on:
+      - zookeeper
+
+
+  kafkaTopic:
+    build: $PWD/kafka/
+    image: tap:kafka
+    container_name: kafkaTopic
+    networks:
+      tap:
+    environment:
+      - KAFKA_ACTION=create-topic
+      - KAFKA_TOPIC=prices
+    depends_on:
+      - kafkaServer
+      - zookeeper
+
+  kafkaUI:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafkaUI
+    ports:
+      - 8080:8080
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafkaServer:9092
+    networks: 
+      - tap
+    depends_on:
+      - kafkaServer
+      - zookeeper
+
 
 
 networks:
