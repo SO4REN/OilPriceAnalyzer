@@ -1,0 +1,22 @@
+services:
+  logstash:
+    image: tap:logstash
+    container_name: logstash
+    user: root              # TEMP FOR FILE WRITING
+    environment:
+      - XPACK_MONITORING_ENABLED=false
+    networks:
+      tap:
+        ipv4_address: 10.0.100.10
+    volumes:
+      - $PWD/logstash/pipeline/http_poller_csv.conf:/usr/share/logstash/pipeline/logstash.conf
+      - $PWD/input/:/tmp/output/
+
+
+networks:
+  tap:
+    name: tap
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.100.1/24
