@@ -1,12 +1,10 @@
 version: '3.7'
 
 services:
-
   logstash:
     build: $PWD/logstash/
     image: tap:logstash
     container_name: logstash
-    #user: root              # TEMP FOR FILE WRITING
     environment:
       - XPACK_MONITORING_ENABLED=false
       - KAFKA_OUTPUT_BOOTSTRAP_SERVERS=kafkaServer:9092
@@ -58,9 +56,11 @@ services:
     environment:
       - KAFKA_ACTION=create-topic
       - KAFKA_TOPIC=prices
+      - KAFKA_SERVER=10.0.100.23:9092
     depends_on:
       - kafkaServer
       - zookeeper
+
 
   kafkaUI:
     image: provectuslabs/kafka-ui:latest

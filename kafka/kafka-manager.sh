@@ -13,17 +13,17 @@ case ${KAFKA_ACTION} in
     zookeeper-server-start.sh ${KAFKA_DIR}/config/zookeeper.properties
     ;;
     "start-kafka")
-    # kafka-storage.sh format --config ${KAFKA_DIR}/config/${KAFKA_CONFIG} --cluster-id $(kafka-storage.sh random-uuid)
     kafka-server-start.sh ${KAFKA_DIR}/config/${KAFKA_CONFIG}
     ;;
     "create-topic")
-    kafka-topics.sh --create --bootstrap-server 10.0.100.23:9092 --replication-factor 1 --partitions ${KAFKA_PARTITION} --topic ${KAFKA_TOPIC}
+    kafka-topics.sh --create --bootstrap-server ${KAFKA_SERVER} --replication-factor 1 --partitions ${KAFKA_PARTITION} --topic ${KAFKA_TOPIC}
+    kafka-configs.sh --bootstrap-server ${KAFKA_SERVER} --alter --entity-type topics --entity-name ${KAFKA_TOPIC} --add-config max.message.bytes=10485880 
     ;;
     "producer")
-    kafka-console-producer.sh --broker-list 10.0.100.23:9092 --topic ${KAFKA_TOPIC}
+    kafka-console-producer.sh --broker-list ${KAFKA_SERVER} --topic ${KAFKA_TOPIC}
     ;;
     "consumer")
-    kafka-console-consumer.sh --bootstrap-server 10.0.100.23:9092 --topic ${KAFKA_TOPIC} --from-beginning ${KAFKA_CONSUMER_PROPERTIES} ${EXTRA_KAFKA_GROUP_ID}
+    kafka-console-consumer.sh --bootstrap-server ${KAFKA_SERVER} --topic ${KAFKA_TOPIC} --from-beginning ${KAFKA_CONSUMER_PROPERTIES} ${EXTRA_KAFKA_GROUP_ID}
     ;;
     "connect-standalone")
     cd ${KAFKA_DIR}
@@ -34,7 +34,7 @@ case ${KAFKA_ACTION} in
     ;;
     "run-class")
     cd ${KAFKA_DIR}
-    kafka-run-class.sh ${KAFKA_DIR}/${KAFKA_CLASS} --bootstrap-server 10.0.100.23:9092 --zookeeper 10.0.100.22:2181 --broker-list 10.0.100.23:9092 
+    kafka-run-class.sh ${KAFKA_DIR}/${KAFKA_CLASS} --bootstrap-server ${KAFKA_SERVER} --zookeeper ${KAFKA_ZK} --broker-list ${KAFKA_SERVER}
     ;;
 esac
 
