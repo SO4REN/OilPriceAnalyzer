@@ -13,8 +13,6 @@ from pyspark.sql.functions import from_json, col, udf
 #         tp.StructField(name= "isSelf", dataType= tp.IntegerType(), nullable= False),
 #         tp.StructField(name= "dtComu", dataType= tp.DateType(), nullable= False)
 #     ])
-
-#     print("PORCODDDIOOOOOOOOOOOOO")
     
 #     datasetFolder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dataset")
 #     anagrafica = spark.read.parquet(os.path.join(datasetFolder, "anagrafica_impianti_CT.parquet"))
