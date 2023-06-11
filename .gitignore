@@ -4,6 +4,7 @@ elasticsearch/*
 #kafka/*
 
 *.tgz
+*.csv
 
 # Random stuff
 *.txt
