@@ -67,8 +67,11 @@ csv = csv.join(anagrafica, csv.idImpiantoPrezzo == anagrafica.idImpianto, how="i
 
 csv = csv.drop("__index_level_0__", "isSelf", "idImpianto", "Provincia", "dtComu", "idImpiantoPrezzo")
 
+df.event = csv.select(fun.to_csv(
+        fun.struct("carburante", "prezzo", "Gestore", "Bandiera", "Tipo Impianto",
+                   "Nome Impianto", "Indirizzo", "Comune", "Latitudine", "longitudine"), options={"sep" : ";"}).alias("data"))
 
-csv.writeStream \
+df.writeStream \
     .format("console") \
     .start() \
     .awaitTermination()
