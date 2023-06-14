@@ -19,10 +19,20 @@ RUN pip3 install pyspark numpy elasticsearch kafka-python
 RUN ln -s /opt/spark-${SPARK_VERSION}-bin-${HADOOP_VERSION} ${SPARK_DIR}
 
 # Add Python Code
-ADD code/clean.py  opt/code/
-ADD code/dataset/ opt/code/dataset/
+
+# ADD code/clean.py opt/code/
+ADD code/dataset/anagrafica_impianti_CT.parquet opt/code/dataset/
+
+ADD code/predict.py opt/code/
+ADD code/dataset/Prezzi/* opt/code/dataset/Prezzi/
+
+
+# ENTRYPOINT [ "/opt/spark/bin/spark-submit", "--packages",\
+#             "org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.0,org.elasticsearch:elasticsearch-spark-30_2.12:8.7.1",\
+#             "--master", "local[*]",\
+#             "opt/code/clean.py"]
 
 ENTRYPOINT [ "/opt/spark/bin/spark-submit", "--packages",\
             "org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.0,org.elasticsearch:elasticsearch-spark-30_2.12:8.7.1",\
             "--master", "local[*]",\
-            "opt/code/clean.py"]
+            "opt/code/predict.py"]
