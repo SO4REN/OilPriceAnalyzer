@@ -64,8 +64,9 @@ csv = csv[csv.descCarburante.isin(["Benzina", "Gasolio"])]
 csv = csv.withColumnRenamed("descCarburante", "carburante")
 csv = csv.withColumnRenamed("idImpianto", "idImpiantoPrezzo")
 csv = csv.join(anagrafica, csv.idImpiantoPrezzo == anagrafica.idImpianto, how="inner")
+csv = csv[csv["Tipo Impianto"] == "Stradale"]
 
-csv = csv.drop("__index_level_0__", "isSelf", "idImpianto", "Provincia", "dtComu", "idImpiantoPrezzo")
+csv = csv.drop("__index_level_0__", "isSelf", "idImpianto", "Tipo Impianto", "Provincia", "dtComu", "idImpiantoPrezzo")
 
 df.event = csv.select(fun.to_csv(
         fun.struct("carburante", "prezzo", "Gestore", "Bandiera", "Tipo Impianto",
