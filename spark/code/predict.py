@@ -34,7 +34,7 @@ def createAndTrainModel(df, mpath, type: str):
 
     lr = model.fit(assembler.transform(train))
     model.write().overwrite().save(os.path.join(os.path.join(path, type), ""))
-    print("RMSE: %f" % lr.summary.rootMeanSquaredError) 
+    print("%s RMSE: %f" % (type, lr.summary.rootMeanSquaredError))
     return lr
 
 
@@ -83,5 +83,6 @@ for X, Y in zip(files, files[1:]):
     dfBenzina = df[(df.descCarburante == "Benzina")].drop("descCarburante")
     dfGasolio = df[(df.descCarburante == "Gasolio")].drop("descCarburante")
 
+    print("\nExec n°: %d" % (files.index(X) + 1))
     lrBenzina = createAndTrainModel(dfBenzina, modelPath, "Benzina")
     lrGasolio = createAndTrainModel(dfGasolio, modelPath, "Gasolio")
