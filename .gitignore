@@ -5,6 +5,8 @@ elasticsearch/*
 
 *.tgz
 *.csv
+*.parquet
+!anagrafica_impianti_CT.parquet
 
 # Random stuff
 *.txt
