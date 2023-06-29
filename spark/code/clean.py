@@ -7,7 +7,7 @@ from pyspark.sql.session import SparkSession
 
 
 
-def removeParenthesis(string):
+def removeBloat(string):
     string = string[1:-1]
     return string.split("\n", 2)[2]
 
@@ -16,7 +16,6 @@ def removeParenthesis(string):
 #* DECLARE VARIABLES
 topic = "prices"
 kafkaServer = "kafkaServer:9092"
-
 
 sparkConf = SparkConf()
 sc = SparkContext(appName = "Clean", conf = sparkConf)
@@ -50,7 +49,7 @@ df = inputDF.selectExpr("CAST(value AS STRING)") \
 df = df.withColumnRenamed("@timestamp", "timestamp")
 df = df.drop_duplicates(["hash"])
 
-preClean = fun.udf(removeParenthesis, tp.StringType())
+preClean = fun.udf(removeBloat, tp.StringType())
 df.event = df.event.cast("string")
 df = df.withColumn("event", preClean(df.event))
 
