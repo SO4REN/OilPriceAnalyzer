@@ -1,6 +1,6 @@
 import os
-import glob
 import pyspark.sql.types as tp
+import pyspark.sql.functions as fun
 from pyspark import SparkContext, SparkConf
 from pyspark.sql.session import SparkSession
 from pyspark.ml.feature import VectorAssembler
@@ -19,25 +19,12 @@ def cleanCSV(df, anagrafica):
     return df
 
 
-def createAndTrainModel(df, mpath, type: str):
-    path = os.path.join(os.path.join(mpath, type), "")
-
-    assembler = VectorAssembler(inputCols=["prezzoX"], outputCol="features")
-    train, _ = df.randomSplit([0.8, 0.2])
-
-    if type not in ["Benzina", "Gasolio"]:
-        type = "Benzina"
-    if os.path.exists(path):
-        model = LinearRegression.load(os.path.join(os.path.join(path, type), ""))
-    else:
-        model = LinearRegression(featuresCol="features", labelCol="prezzoY", predictionCol="prediction", regParam=0.3, elasticNetParam=0.8)
-
-    lr = model.fit(assembler.transform(train))
-    model.write().overwrite().save(os.path.join(os.path.join(path, type), ""))
-    print("%s RMSE: %f" % (type, lr.summary.rootMeanSquaredError))
-    return lr
-
-
+def getTrainedRegressor(impiantiFiles, id, carburante: str):
+    data = spark.read.parquet(os.path.join(impiantiFiles, str(id) + ".parquet"))
+    assembler = VectorAssembler(inputCols=["X_" + carburante], outputCol="features")
+    model = LinearRegression(featuresCol="features", labelCol="Y_" + carburante, predictionCol="prediction", regParam=0.3, elasticNetParam=0.8)
+    regressor = model.fit(assembler.transform(data))
+    return regressor
 
 
 #! ------------------------------ MAIN ------------------------------ *#
@@ -58,31 +45,24 @@ sc.setLogLevel("ERROR")
 modelPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "model")
 datasetFolder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dataset")
 anagrafica = spark.read.parquet(os.path.join(datasetFolder, "anagrafica_impianti_CT.parquet"))
-
-prices = os.path.join(os.path.join(datasetFolder, "Prezzi"), "")
-files = glob.glob(os.path.join(prices, "*.csv"))
-files.sort()
+impiantiFiles = os.path.join(datasetFolder, "Impianti", "")
 
 
-lrBenzina = None
-lrGasolio = None
-for X, Y in zip(files, files[1:]):
-    dfX = spark.read.csv(X, schema=schema, sep=";")
-    dfY = spark.read.csv(Y, schema=schema, sep=";")
+#! -------------------- PREDICTION ----------------------------------------
+tempDF = spark.read.csv(os.path.join(datasetFolder, "prezzo_alle_8.csv"), header=False, schema=schema, sep=";")
+tempDF = cleanCSV(tempDF, anagrafica)
+tempDF = tempDF.withColumn("prediction", tempDF.prezzo * 0)
 
-    dfX = cleanCSV(dfX, anagrafica)
-    dfY = cleanCSV(dfY, anagrafica)
+impianti = set(anagrafica.select("idImpianto").collect())
+for i in impianti:    
+    row = tempDF[tempDF.idImpianto == i.idImpianto].drop("prediction")
+    carb = (row.select("descCarburante").collect()[0].descCarburante).capitalize()
 
-    dfX = dfX.withColumnRenamed("prezzo", "prezzoX")
-    dfY = dfY.withColumnRenamed("prezzo", "prezzoY")
-    dfX = dfX.withColumnRenamed("Tipo Impianto", "Tipo Impianto X")
+    assembler = VectorAssembler(inputCols=["prezzo"], outputCol="features")
+    regressor = getTrainedRegressor(impiantiFiles, i.idImpianto, carb)
 
-    df = dfX.join(dfY, ["idImpianto", "descCarburante"], how="inner")
-    df = df[df["Tipo Impianto X"] == "Stradale"].select("descCarburante", "prezzoX", "prezzoY")
+    row = regressor.transform(assembler.transform(row))
+    row = row.drop("features")
 
-    dfBenzina = df[(df.descCarburante == "Benzina")].drop("descCarburante")
-    dfGasolio = df[(df.descCarburante == "Gasolio")].drop("descCarburante")
-
-    print("\nExec n°: %d" % (files.index(X) + 1))
-    lrBenzina = createAndTrainModel(dfBenzina, modelPath, "Benzina")
-    lrGasolio = createAndTrainModel(dfGasolio, modelPath, "Gasolio")
+    pred = row.select("prediction").collect()[0].prediction
+    tempDF = tempDF.withColumn("prediction", fun.when(tempDF.idImpianto == i.idImpianto, pred).otherwise(tempDF.prediction))
