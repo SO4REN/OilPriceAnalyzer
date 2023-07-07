@@ -7,7 +7,7 @@ elasticsearch/*
 *.csv
 *.parquet
 !anagrafica_impianti_CT.parquet
-**/model/*
+!prezzi.parquet
 
 # Random stuff
 *.txt
