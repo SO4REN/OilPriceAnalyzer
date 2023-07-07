@@ -14,15 +14,14 @@ RUN yum -y install python3
 RUN yum -y install glibc
 # RUN apt-get update && apt-get -y install bash python3 python3-pip netcat
 
-RUN pip3 install pyspark numpy elasticsearch kafka-python
+RUN pip3 install elasticsearch kafka-python numpy pyspark 
 # Create Sym Link 
 RUN ln -s /opt/spark-${SPARK_VERSION}-bin-${HADOOP_VERSION} ${SPARK_DIR}
 
 # Add Python Code
-ADD code/*.py opt/code/
+ADD code/src/* opt/code/
 ADD code/dataset/anagrafica_impianti_CT.parquet opt/code/dataset/
-ADD code/dataset/Prezzi/* opt/code/dataset/Prezzi/
-
+ADD code/dataset/prezzi.parquet opt/code/dataset/
 
 # ENTRYPOINT [ "/opt/spark/bin/spark-submit", "--packages",\
 #             "org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.0,org.elasticsearch:elasticsearch-spark-30_2.12:8.7.1",\
