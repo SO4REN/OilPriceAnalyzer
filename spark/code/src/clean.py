@@ -13,6 +13,7 @@ def cleanDF(df, anagrafica):
     df = df[df.isSelf == 1]
     df = df[df.descCarburante.isin(["Benzina", "Gasolio"])]
     df = df.withColumnRenamed("descCarburante", "carburante")
+    df = df.withColumn("carburante", fun.when(df.carburante == "Benzina", 0).otherwise(1))
     df = df.withColumnRenamed("idImpianto", "idImpiantoPrezzo")
     df = df.join(anagrafica, df.idImpiantoPrezzo == anagrafica.idImpianto, how="inner")
     df = df[df["Tipo Impianto"] == "Stradale"]
@@ -22,7 +23,17 @@ def cleanDF(df, anagrafica):
 
 
 
-def cleanStreamingDF(inputDF, anagrafica, schemaJSON):
+def cleanStreamingDF(inputDF, anagrafica):
+    schemaJSON = tp.StructType([
+        tp.StructField(name="@timestamp", dataType=tp.TimestampType(), nullable=False),
+        tp.StructField(name="event", 
+                       dataType=tp.StructType([tp.StructField(name="original", dataType=tp.StringType(), nullable=False)])
+                       ),
+        tp.StructField(name="hash", dataType=tp.StringType(), nullable=False),
+        tp.StructField(name="column1", dataType=tp.StringType(), nullable=False),
+        tp.StructField(name="@version", dataType=tp.IntegerType(), nullable=False)
+    ])
+    
     df = inputDF.selectExpr("CAST(value AS STRING)") \
             .select(fun.from_json(fun.col("value"), schemaJSON).alias("data")) \
             .select("data.event", "data.hash", "data.@timestamp")
