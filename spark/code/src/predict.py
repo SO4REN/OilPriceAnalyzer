@@ -1,9 +1,9 @@
-from pyspark.ml.feature import VectorAssembler, OneHotEncoder
+import pyspark.sql.functions as fun
 from pyspark.ml.regression import DecisionTreeRegressor
+from pyspark.ml.feature import VectorAssembler, OneHotEncoder
 
 
 
-#* SINGLE REGRESSOR FOR ALL IMPIANTI
 def train(trainDF):
     encoder = OneHotEncoder(inputCols=["idImpianto", "carburante"], outputCols=["X_idImpianto", "X_carburante"])
     model = encoder.fit(trainDF)
@@ -15,7 +15,6 @@ def train(trainDF):
     lr = DecisionTreeRegressor(featuresCol="features", labelCol="Y_prezzo", predictionCol="prediction")
     regressor = lr.fit(df)
     return regressor
-
 
 
 def predictStreamingDF(df, trainDF):
@@ -31,4 +30,5 @@ def predictStreamingDF(df, trainDF):
     df = regressor.transform(df)
     df = df.drop("features")
     df = df.drop("X_idImpianto", "X_carburante")
+    df = df.withColumn("timestampPrediction", fun.current_timestamp())
     return df

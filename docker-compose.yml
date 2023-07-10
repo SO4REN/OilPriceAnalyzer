@@ -91,9 +91,7 @@ services:
       tap:
         ipv4_address: 10.0.100.27
     volumes:
-      - $PWD/spark/code/src:/opt/code
-      - $PWD/spark/code/dataset/anagrafica_impianti_CT.parquet:/opt/code/dataset/anagrafica_impianti_CT.parquet
-      - $PWD/spark/code/dataset/prezzi.parquet:/opt/code/dataset/prezzi.parquet
+      - $PWD/spark/code/src/:/opt/code
     entrypoint: "/opt/spark/bin/spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.0,org.elasticsearch:elasticsearch-spark-30_2.12:8.7.1 --master local[*] opt/code/main.py"
     depends_on:
       kafkaTopic:
