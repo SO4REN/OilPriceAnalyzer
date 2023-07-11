@@ -8,6 +8,7 @@ elasticsearch/*
 *.parquet
 # !anagrafica_impianti_CT.parquet
 # !prezzi.parquet
+*/docker-compose.yml
 
 # Random stuff
 *.txt
