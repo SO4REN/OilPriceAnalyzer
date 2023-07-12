@@ -56,7 +56,7 @@ services:
     environment:
       - KAFKA_ACTION=create-topic
       - KAFKA_TOPIC=prices
-      - KAFKA_SERVER=10.0.100.23:9092
+      - KAFKA_SERVER=kafkaServer:9092
     depends_on:
       - kafkaServer
       - zookeeper
@@ -96,6 +96,34 @@ services:
     depends_on:
       kafkaTopic:
         condition: service_completed_successfully
+
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.7.1
+    networks:
+      tap:
+        ipv4_address: 10.0.100.51
+    environment:
+      cluster.routing.allocation.disk.threshold_enabled: false
+      cluster.name: elasticsearch
+      discovery.type: single-node
+      xpack.security.enabled: false
+      bootstrap.memory_lock: true
+      ES_JAVA_OPTS: -Xms4g -Xmx4g
+    ports:
+      - 9200:9200
+
+
+  kibana:
+    container_name: kibana
+    build: $PWD/kibana/
+    networks:
+      tap:
+        ipv4_address: 10.0.100.52
+    ports:
+      - 5601:5601
+
 
 
 networks:

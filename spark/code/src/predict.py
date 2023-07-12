@@ -30,5 +30,5 @@ def predictStreamingDF(df, trainDF):
     df = regressor.transform(df)
     df = df.drop("features")
     df = df.drop("X_idImpianto", "X_carburante")
-    df = df.withColumn("timestampPrediction", fun.current_timestamp())
+    df = df.withColumn("@timestamp", fun.date_format(fun.current_timestamp(), "yyyy-MM-dd HH:mm:ss"))
     return df
