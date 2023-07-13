@@ -40,7 +40,7 @@ def cleanStreamingDF(inputDF, anagrafica):
             .select(fun.from_json(fun.col("value"), schemaJSON).alias("data")) \
             .select("data.event", "data.hash", "data.@timestamp")
     df = df.withColumnRenamed("@timestamp", "timestamp")
-    # df = df.drop_duplicates(["hash"]) #! Da rimuovere in produzione
+    df = df.drop_duplicates(["hash"])
 
     preClean = fun.udf(removeBloat, tp.StringType())
     df.event = df.event.cast("string")

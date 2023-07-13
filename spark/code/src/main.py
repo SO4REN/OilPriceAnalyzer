@@ -7,39 +7,6 @@ from clean import *
 from predict import *
 
 
-def saveAndUpdate(df, _):
-    # global spark
-    # global impianti
-    global trainingDataset
-
-    if(df.count() == 0):
-        return
-
-    # TODO SELECT NEWEST DATA FROM TRAINING
-    # tr = trainingDataset.drop("__index_level_0__")
-    # for impianto in impianti:
-    #     for carb in (0, 1):
-    #         row = tr.filter((tr.idImpianto == impianto) & (tr.carburante == carb)).orderBy("date", ascending=False).limit(1)
-    #         tempDF = df.filter((df.idImpianto == impianto) & (df.carburante == carb))
-            
-    #         newRow = spark.createDataFrame([row], tr.schema)
-    #         newRow = newRow.drop("X_prezzo")
-    #         newRow = newRow.withColumnRenamed("Y_prezzo", "X_prezzo")
-    #         newRow = newRow.withColumn("Y_prezzo", tempDF.prezzo)
-    #         print(newRow.show())
-
-
-    # df.write.format("console").save()
-
-    df.write.format("org.elasticsearch.spark.sql") \
-                .option("spark.es.nodes", "elasticsearch") \
-                .option("es.nodes", "elasticsearch") \
-                .option("es.port", "9200") \
-                .option("es.resource", "prices") \
-                .option("es.mapping.id", "idImpianto") \
-                .mode("append") \
-                .save()
-
 
 
 def initSpark():
@@ -50,6 +17,7 @@ def initSpark():
     sc.addPyFile(os.path.join(os.path.dirname(os.path.realpath(__file__)), "clean.py"))
     sc.addPyFile(os.path.join(os.path.dirname(os.path.realpath(__file__)), "predict.py"))
     return sc, spark
+
 
 
 def createElasticIndex(host, index, mapping):
@@ -67,9 +35,8 @@ def createElasticIndex(host, index, mapping):
     return es
 
 
-def main(spark):
-    es = createElasticIndex(ELASTIC_HOST, ELASTIC_INDEX, ES_MAPPING)
-    
+
+def main(spark):    
     #* GET STREAMING INPUT DATAFRAME
     inputDF = spark.readStream.format("kafka") \
             .option("kafka.bootstrap.servers", KAFKA_SERVER) \
@@ -80,11 +47,6 @@ def main(spark):
     df = predictStreamingDF(df, trainingDataset)    #* DATA PREDICTION
 
     #* EXECUTE
-    # df.writeStream \
-    #     .foreachBatch(saveAndUpdate) \
-    #     .start() \
-    #     .awaitTermination()
-
     df.writeStream \
         .option("checkpointLocation", "/save/location") \
         .option("es.nodes", "elasticsearch") \
@@ -93,6 +55,9 @@ def main(spark):
         .awaitTermination()
 
     spark.stop()
+
+
+
 
 
 if __name__ == "__main__":
@@ -123,6 +88,7 @@ if __name__ == "__main__":
     #*-----------------------------------------------------------------
     
     sc, spark = initSpark()
+    es = createElasticIndex(ELASTIC_HOST, ELASTIC_INDEX, ES_MAPPING)
     
     datasetFolder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dataset")
     anagrafica = spark.read.parquet(os.path.join(datasetFolder, "anagrafica_impianti_CT.parquet"))
