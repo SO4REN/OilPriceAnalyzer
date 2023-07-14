@@ -31,4 +31,5 @@ def predictStreamingDF(df, trainDF):
     df = df.drop("features")
     df = df.drop("X_idImpianto", "X_carburante")
     df = df.withColumn("@timestamp", fun.date_format(fun.current_timestamp(), "yyyy-MM-dd HH:mm:ss"))
+    df = df.withColumn("carburante", fun.when(df.carburante == 0, "Benzina").otherwise("Gasolio"))
     return df
