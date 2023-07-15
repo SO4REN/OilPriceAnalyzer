@@ -26,10 +26,9 @@ def predictStreamingDF(df, trainDF):
 
     assembler = VectorAssembler(inputCols=["prezzo", "X_idImpianto", "X_carburante"], outputCol="features")
     df = assembler.transform(df)
-
     df = regressor.transform(df)
-    df = df.drop("features")
-    df = df.drop("X_idImpianto", "X_carburante")
+    
+    df = df.drop("X_idImpianto", "features", "X_carburante")
     df = df.withColumn("@timestamp", fun.date_format(fun.current_timestamp(), "yyyy-MM-dd HH:mm:ss"))
     df = df.withColumn("carburante", fun.when(df.carburante == 0, "Benzina").otherwise("Gasolio"))
     return df

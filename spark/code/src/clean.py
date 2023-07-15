@@ -18,7 +18,6 @@ def cleanDF(df, anagrafica):
     df = df.join(anagrafica, df.idImpiantoPrezzo == anagrafica.idImpianto, how="inner")
     df = df[df["Tipo Impianto"] == "Stradale"]
     
-    # df = df.withColumn("location", fun.concat(df.Latitudine, fun.lit(","), df.Longitudine))
     df = df.withColumn("Location", fun.array(df.Longitudine, df.Latitudine))
     
     df = df.drop("Latitudine", "Longitudine")
@@ -42,7 +41,7 @@ def cleanStreamingDF(inputDF, anagrafica):
             .select(fun.from_json(fun.col("value"), schemaJSON).alias("data")) \
             .select("data.event", "data.hash", "data.@timestamp")
     df = df.withColumnRenamed("@timestamp", "timestamp")
-    # df = df.drop_duplicates(["hash"]) #! DEBUG
+    df = df.drop_duplicates(["hash"]) #! DEBUG
 
     preClean = fun.udf(removeBloat, tp.StringType())
     df.event = df.event.cast("string")
