@@ -13,23 +13,11 @@ services:
       tap:
         ipv4_address: 10.0.100.10
     volumes:
-      - $PWD/logstash/pipeline/http_poller_csv.conf:/usr/share/logstash/pipeline/logstash.conf
+      - $PWD/logstash/pipeline/http_poller_original.conf:/usr/share/logstash/pipeline/logstash.conf # original
+      # - $PWD/logstash/pipeline/http_poller_simulation.conf:/usr/share/logstash/pipeline/logstash.conf #! for simulation
     depends_on:
       kafkaTopic:
         condition: service_completed_successfully
-
-
-  zookeeper:
-    build: $PWD/kafka/
-    image: tap:kafka
-    container_name: kafkaZk
-    networks:
-      tap:
-        ipv4_address: 10.0.100.22
-    ports:
-      - 2181:2181
-    environment:
-      - KAFKA_ACTION=start-zk
 
 
   kafkaServer:
@@ -43,8 +31,7 @@ services:
       - 9092:9092
     environment:
       - KAFKA_ACTION=start-kafka
-    depends_on:
-      - zookeeper
+      - KAFKA_CONFIG=kraft
 
 
   kafkaTopic:
@@ -52,14 +39,13 @@ services:
     image: tap:kafka
     container_name: kafkaTopic
     networks:
-      tap:
+      - tap
     environment:
       - KAFKA_ACTION=create-topic
       - KAFKA_TOPIC=prices
       - KAFKA_SERVER=kafkaServer:9092
     depends_on:
       - kafkaServer
-      - zookeeper
 
 
   kafkaUI:
@@ -74,14 +60,12 @@ services:
       - tap
     depends_on:
       - kafkaServer
-      - zookeeper
 
 
   spark:
     build: $PWD/spark/
     image: tap:spark
     container_name: spark
-    pid: host
     deploy:
       resources:
         limits:
@@ -110,7 +94,7 @@ services:
       discovery.type: single-node
       xpack.security.enabled: false
       bootstrap.memory_lock: true
-      ES_JAVA_OPTS: -Xms4g -Xmx4g
+      ES_JAVA_OPTS: -Xms1g -Xmx4g
     ports:
       - 9200:9200
 

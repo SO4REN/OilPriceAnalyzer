@@ -11,6 +11,6 @@ RUN ln -s /opt/kafka_${KAFKA_VERSION} ${KAFKA_DIR}
 
 ADD kafka-manager.sh ${KAFKA_DIR}/bin/kafka-manager
 
-ADD conf/* ${KAFKA_DIR}/config/
+ADD conf/kraft/* ${KAFKA_DIR}/config/kraft/
 
 ENTRYPOINT [ "kafka-manager" ]
