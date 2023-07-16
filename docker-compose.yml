@@ -101,12 +101,26 @@ services:
 
   kibana:
     container_name: kibana
+    image: tap:kibana
     build: $PWD/kibana/
     networks:
       tap:
         ipv4_address: 10.0.100.52
     ports:
       - 5601:5601
+
+  simulationServer:
+    build: $PWD/pythonSimulation
+    image: tap:simulationServer
+    container_name: simulationServer
+    ports:
+      - 7777:7777
+    networks:
+      tap:
+        ipv4_address: 10.0.100.77
+    depends_on:
+      kafkaTopic:
+        condition: service_completed_successfully
 
 
 
