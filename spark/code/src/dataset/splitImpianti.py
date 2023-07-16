@@ -61,7 +61,7 @@ def toSingleFile():
                                         "Y_prezzo": yTarget},
                                         columns=["idImpianto", "carburante", "X_prezzo", "Y_prezzo"], index=[0])
                     df = pd.concat([df, newRow], ignore_index=True)
-    df.to_parquet("Prezzi.parquet")
+    df.to_parquet("prezzi.parquet")
     
 def toMultipleFiles():
     anagrafica = pd.read_parquet("anagrafica_impianti_CT.parquet")
@@ -108,5 +108,5 @@ def toMultipleFiles():
 
 
 if __name__ == "__main__":
-    # toSingleFile()
-    toMultipleFiles()
+    toSingleFile()
+    # toMultipleFiles() #! Intrattabile
