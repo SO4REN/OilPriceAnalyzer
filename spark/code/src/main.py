@@ -14,8 +14,8 @@ def initSpark():
     spark = SparkSession(sc).builder.appName("OilPricePrediction").getOrCreate()
     sc.setLogLevel("ERROR")
 
-    sc.addPyFile(os.path.join(os.path.dirname(os.path.realpath(__file__)), "clean.py"))
-    sc.addPyFile(os.path.join(os.path.dirname(os.path.realpath(__file__)), "predict.py"))
+    sc.addPyFile(os.path.join(mainFolder, "clean.py"))
+    sc.addPyFile(os.path.join(mainFolder, "predict.py"))
     return sc, spark
 
 
@@ -36,7 +36,7 @@ def createElasticIndex(host, index, mapping):
 
 
 
-def main(spark):    
+def main(spark):
     #* GET STREAMING INPUT DATAFRAME
     inputDF = spark.readStream.format("kafka") \
             .option("kafka.bootstrap.servers", KAFKA_SERVER) \
@@ -44,7 +44,7 @@ def main(spark):
             .load()
 
     df = cleanStreamingDF(inputDF, anagrafica)      #* DATA CLEANING AND DEDUPLICATION
-    df = predictStreamingDF(df, trainingDataset)    #* DATA PREDICTION
+    df = predictStreamingDF(df, modelFolder)    #* DATA PREDICTION
 
     #* EXECUTE
     df.writeStream \
@@ -55,8 +55,6 @@ def main(spark):
         .awaitTermination()
 
     spark.stop()
-
-
 
 
 
@@ -86,13 +84,13 @@ if __name__ == "__main__":
     }
     
     #*-----------------------------------------------------------------
-    
+
+    mainFolder = os.path.dirname(os.path.realpath(__file__))
+    modelFolder = os.path.join(mainFolder, "model")
+    datasetFolder = os.path.join(mainFolder, "dataset")
+
     sc, spark = initSpark()
     es = createElasticIndex(ELASTIC_HOST, ELASTIC_INDEX, ES_MAPPING)
-    
-    datasetFolder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dataset")
     anagrafica = spark.read.parquet(os.path.join(datasetFolder, "anagrafica_impianti_CT.parquet"))
-    trainingDataset = spark.read.parquet(os.path.join(datasetFolder, "prezzi.parquet"))
 
     main(spark)
-
