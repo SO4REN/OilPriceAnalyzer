@@ -7,6 +7,9 @@
 
 # Random stuff
 *.txt
+**/Prezzi/*
+**/prezzi/*
+**/model/*
 
 # General
 .DS_Store
