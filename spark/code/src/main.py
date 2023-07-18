@@ -8,7 +8,7 @@ from predict import *
 
 
 
-def addPrediction(DF, _):
+def addPrediction(DF, batchID):
     finalSchema = tp.StructType([
         tp.StructField(name="carburante", dataType=tp.IntegerType(), nullable=False),
         tp.StructField(name="prezzo", dataType=tp.DoubleType(), nullable=False),
@@ -24,13 +24,16 @@ def addPrediction(DF, _):
     ])
 
     if DF.count() > 0:
-        global regressors
-        
+        print("New batch arrived. BatchID:", batchID)
         df = DF.toPandas()
         df["prediction"] = 0.0
-        
+
+        # Cache = True  -> Load regressors from disk
+        # Cache = False -> Train regressors and save them to disk
         #* ----------------------------------------------------------------
         assembler = VectorAssembler(inputCols=["prezzo"], outputCol="features")
+        regressors = getRegressors(impianti, (batchID == 1), modelFolder=modelFolder, spark=spark, datasetFolder=os.path.join(datasetFolder, "prezzi"))
+        print("Regressors READY")
 
         for _, row in df.iterrows():
             impianto = row["idImpianto"]
@@ -49,20 +52,24 @@ def addPrediction(DF, _):
         toRet = spark.createDataFrame(df, schema=finalSchema)
         toRet = toRet.withColumn("@timestamp", fun.date_format(fun.current_timestamp(), "yyyy-MM-dd HH:mm:ss"))
         toRet = toRet.withColumn("carburante", fun.when(toRet.carburante == 0, "Benzina").otherwise("Gasolio"))
-        
+
         toRet = toRet.withColumn("Location", fun.array(toRet.Longitudine, toRet.Latitudine))
         toRet = toRet.drop("Latitudine", "Longitudine")
+        print("Prediction DONE")
 
         toRet.write \
             .option("checkpointLocation", "/save/location") \
             .option("es.nodes", "elasticsearch") \
+            .option("es.port", "9200") \
+            .option("es.resource", ELASTIC_INDEX) \
+            .mode("append") \
             .format("es") \
-            .save(ELASTIC_INDEX)
+            .save()
         print("Prediction added to ElasticSearch.")
 
         updateDataset(df, impianti, spark, os.path.join(datasetFolder, "prezzi"))
-        regressors = getRegressors(impianti, False, modelFolder=modelFolder, spark=spark, datasetFolder=os.path.join(datasetFolder, "prezzi"))
-        print("Regressors UPDATED.")
+        print("Dataset UPDATED")
+
 
 
 def initSpark():
@@ -147,9 +154,4 @@ if __name__ == "__main__":
     anagrafica = spark.read.parquet(os.path.join(datasetFolder, "anagrafica_impianti_CT.parquet"))
     impianti = [x.idImpianto for x in anagrafica.select("idImpianto").distinct().collect()]
 
-    # Cache = True  -> Load regressors from disk
-    # Cache = False -> Train regressors and save them to disk
-    regressors = getRegressors(impianti, True, modelFolder=modelFolder, spark=spark, datasetFolder=os.path.join(datasetFolder, "prezzi"))
-    print("Regressors READY.")
-    
     main(spark)

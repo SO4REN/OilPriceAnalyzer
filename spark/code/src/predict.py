@@ -25,6 +25,7 @@ def getRegressors(impianti, cache = False, **kwargs):
         regressors[key] = dict.fromkeys((0, 1))
 
     if cache and len(os.listdir(modelFolder)) > 0:
+        print("Loading regressors...")
         for impianto in impianti:
             for carb in (0, 1):
                 regressors[impianto][carb] = LinearRegressionModel.load(os.path.join(modelFolder, str(impianto) + "_" + str(carb)))
@@ -52,5 +53,3 @@ def updateDataset(df, impianti, spark, datasetFolder):
             data = df[(df.idImpianto == impianto) & (df.carburante == carb)].prezzo.values[0] if not df[(df.idImpianto == impianto) & (df.carburante == carb)].empty else 0.0
             lastRow = lastRow.withColumn("Y_prezzo", fun.lit(data).cast(tp.DoubleType()))
             lastRow.write.mode("append").parquet(os.path.join(datasetFolder, str(impianto)))
-    
-    print("Dataset updated!")
