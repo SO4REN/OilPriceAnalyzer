@@ -24,7 +24,7 @@ def getRegressors(impianti, cache = False, **kwargs):
     for key in regressors:
         regressors[key] = dict.fromkeys((0, 1))
 
-    if cache:
+    if cache and len(os.listdir(modelFolder)) > 0:
         for impianto in impianti:
             for carb in (0, 1):
                 regressors[impianto][carb] = LinearRegressionModel.load(os.path.join(modelFolder, str(impianto) + "_" + str(carb)))

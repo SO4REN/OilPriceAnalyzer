@@ -8,7 +8,7 @@ from predict import *
 
 
 
-def do_all(DF, _):
+def addPrediction(DF, _):
     finalSchema = tp.StructType([
         tp.StructField(name="carburante", dataType=tp.IntegerType(), nullable=False),
         tp.StructField(name="prezzo", dataType=tp.DoubleType(), nullable=False),
@@ -24,6 +24,8 @@ def do_all(DF, _):
     ])
 
     if DF.count() > 0:
+        global regressors
+        
         df = DF.toPandas()
         df["prediction"] = 0.0
         
@@ -56,8 +58,11 @@ def do_all(DF, _):
             .option("es.nodes", "elasticsearch") \
             .format("es") \
             .save(ELASTIC_INDEX)
+        print("Prediction added to ElasticSearch.")
 
         updateDataset(df, impianti, spark, os.path.join(datasetFolder, "prezzi"))
+        regressors = getRegressors(impianti, False, modelFolder=modelFolder, spark=spark, datasetFolder=os.path.join(datasetFolder, "prezzi"))
+        print("Regressors UPDATED.")
 
 
 def initSpark():
@@ -68,7 +73,6 @@ def initSpark():
     sc.addPyFile(os.path.join(mainFolder, "clean.py"))
     sc.addPyFile(os.path.join(mainFolder, "predict.py"))
     return sc, spark
-
 
 
 def createElasticIndex(host, index, mapping):
@@ -98,7 +102,7 @@ def main(spark):
 
     #* EXECUTE
     df.writeStream \
-        .foreachBatch(do_all) \
+        .foreachBatch(addPrediction) \
         .start() \
         .awaitTermination()
 
