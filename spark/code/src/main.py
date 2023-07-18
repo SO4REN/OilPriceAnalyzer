@@ -22,7 +22,7 @@ def do_all(DF, _):
         tp.StructField(name="Longitudine", dataType=tp.FloatType(), nullable=False),
         tp.StructField(name="prediction", dataType=tp.DoubleType(), nullable=False),
     ])
-    
+
     if DF.count() > 0:
         df = DF.toPandas()
         df["prediction"] = 0.0
@@ -57,6 +57,7 @@ def do_all(DF, _):
             .format("es") \
             .save(ELASTIC_INDEX)
 
+        updateDataset(df, impianti, spark, os.path.join(datasetFolder, "prezzi"))
 
 
 def initSpark():
@@ -110,7 +111,7 @@ if __name__ == "__main__":
     KAFKA_SERVER = "kafkaServer:9092"
     ELASTIC_HOST = "http://elasticsearch:9200"
     ELASTIC_INDEX = "prices"
-    
+
     ES_MAPPING = {
         "mappings": {
             "properties": {
@@ -128,7 +129,7 @@ if __name__ == "__main__":
             },
         },
     }
-    
+
     #*-----------------------------------------------------------------
 
     mainFolder = os.path.dirname(os.path.realpath(__file__))
@@ -138,9 +139,13 @@ if __name__ == "__main__":
     sc, spark = initSpark()
     es = createElasticIndex(ELASTIC_HOST, ELASTIC_INDEX, ES_MAPPING)
     spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
-    
+
     anagrafica = spark.read.parquet(os.path.join(datasetFolder, "anagrafica_impianti_CT.parquet"))
-    regressors = getRegressors([x.idImpianto for x in anagrafica.select("idImpianto").distinct().collect()], modelFolder)
-    print("Regressors loaded.")
+    impianti = [x.idImpianto for x in anagrafica.select("idImpianto").distinct().collect()]
+
+    # Cache = True  -> Load regressors from disk
+    # Cache = False -> Train regressors and save them to disk
+    regressors = getRegressors(impianti, True, modelFolder=modelFolder, spark=spark, datasetFolder=os.path.join(datasetFolder, "prezzi"))
+    print("Regressors READY.")
     
     main(spark)

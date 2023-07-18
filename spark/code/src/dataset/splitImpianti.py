@@ -74,6 +74,7 @@ def toMultipleFiles():
 
     removeFirstLine(files)
 
+    countImpianti = dict.fromkeys(impianti, 0)
     for X, Y in zip(files, files[1:]):
         dfX = pd.read_csv(X, sep=";", header=0, names=["idImpianto", "descCarburante", "prezzo", "isSelf", "dtComu"], on_bad_lines="skip")
         dfY = pd.read_csv(Y, sep=";", header=0, names=["idImpianto", "descCarburante", "prezzo", "isSelf", "dtComu"], on_bad_lines="skip")
@@ -86,7 +87,7 @@ def toMultipleFiles():
             if os.path.exists("Prezzi/{id}.parquet".format(id=impianto)):
                 df = pd.read_parquet("Prezzi/{id}.parquet".format(id=impianto))
             else:
-                df = pd.DataFrame(columns=["carburante", "X_prezzo", "Y_prezzo"])
+                df = pd.DataFrame(columns=["carburante", "X_prezzo", "Y_prezzo", "insertOrder"])
             
             prezzoX = dfX[dfX.idImpianto == impianto][["descCarburante", "prezzo", "idImpianto"]]
             prezzoY = dfY[dfY.idImpianto == impianto][["descCarburante", "prezzo", "idImpianto"]]
@@ -101,12 +102,16 @@ def toMultipleFiles():
                     newRow = pd.DataFrame({
                                         "carburante": carb,
                                         "X_prezzo": xTarget,
-                                        "Y_prezzo": yTarget},
-                                        columns=["carburante", "X_prezzo", "Y_prezzo"], index=[0])
+                                        "Y_prezzo": yTarget,
+                                        "insertOrder": countImpianti[impianto]},
+                                        columns=["carburante", "X_prezzo", "Y_prezzo", "insertOrder"], index=[0])
                     df = pd.concat([df, newRow], ignore_index=True)
+            countImpianti[impianto] += 1
             df.to_parquet("Prezzi/{id}.parquet".format(id=impianto))
 
 
 if __name__ == "__main__":
-    toSingleFile()
-    # toMultipleFiles() #! Intrattabile
+    # toSingleFile()
+    toMultipleFiles()
+    
+    pass
