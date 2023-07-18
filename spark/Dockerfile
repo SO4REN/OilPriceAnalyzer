@@ -12,6 +12,6 @@ RUN yum -y install python3
 
 RUN yum -y install glibc
 
-RUN pip3 install elasticsearch kafka-python numpy pyspark 
+RUN pip3 install elasticsearch kafka-python numpy pyspark pyarrow pandas
 
 RUN ln -s /opt/spark-${SPARK_VERSION}-bin-${HADOOP_VERSION} ${SPARK_DIR}

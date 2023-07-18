@@ -18,9 +18,6 @@ def cleanDF(df, anagrafica):
     df = df.join(anagrafica, df.idImpiantoPrezzo == anagrafica.idImpianto, how="inner")
     df = df[df["Tipo Impianto"] == "Stradale"]
     
-    df = df.withColumn("Location", fun.array(df.Longitudine, df.Latitudine))
-    
-    df = df.drop("Latitudine", "Longitudine")
     df = df.drop("__index_level_0__", "isSelf", "Tipo Impianto", "Provincia", "dtComu", "idImpiantoPrezzo")
     return df
 
@@ -39,21 +36,17 @@ def cleanStreamingDF(inputDF, anagrafica):
     
     df = inputDF.selectExpr("CAST(value AS STRING)") \
             .select(fun.from_json(fun.col("value"), schemaJSON).alias("data")) \
-            .select("data.event", "data.hash", "data.@timestamp")
-    df = df.withColumnRenamed("@timestamp", "timestamp")
+            .select("data.event", "data.hash")
     df = df.drop_duplicates(["hash"]) #! DEBUG
 
     preClean = fun.udf(removeBloat, tp.StringType())
     df.event = df.event.cast("string")
     df = df.withColumn("event", preClean(df.event))
 
-    outputDF = df.select(fun.explode(fun.split(df.event, "\n")).alias("df"), "timestamp")
+    outputDF = df.select(fun.explode(fun.split(df.event, "\n")).alias("df"))
     outputDF = outputDF.select(fun.from_csv(fun.col("df"),
                     schema="idImpianto INT, descCarburante STRING, prezzo DOUBLE, isSelf INT, dtComu STRING",
-                    options={"sep" : ';'}).alias("data"), "timestamp").select("data.*", "timestamp")
+                    options={"sep" : ';'}).alias("data")).select("data.*")
 
     outputDF = cleanDF(outputDF, anagrafica)
-    outputDF = outputDF.withColumn("timestamp", fun.to_timestamp(outputDF.timestamp, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
-    outputDF = outputDF.withColumnRenamed("timestamp", "original_timestamp")
-    
     return outputDF

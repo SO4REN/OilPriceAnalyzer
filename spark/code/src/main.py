@@ -8,6 +8,56 @@ from predict import *
 
 
 
+def do_all(DF, _):
+    finalSchema = tp.StructType([
+        tp.StructField(name="carburante", dataType=tp.IntegerType(), nullable=False),
+        tp.StructField(name="prezzo", dataType=tp.DoubleType(), nullable=False),
+        tp.StructField(name="idImpianto", dataType=tp.IntegerType(), nullable=False),
+        tp.StructField(name="Gestore", dataType=tp.StringType(), nullable=False),
+        tp.StructField(name="Bandiera", dataType=tp.StringType(), nullable=False),
+        tp.StructField(name="Nome Impianto", dataType=tp.StringType(), nullable=False),
+        tp.StructField(name="Indirizzo", dataType=tp.StringType(), nullable=False),
+        tp.StructField(name="Comune", dataType=tp.StringType(), nullable=False),
+        tp.StructField(name="Latitudine", dataType=tp.FloatType(), nullable=False),
+        tp.StructField(name="Longitudine", dataType=tp.FloatType(), nullable=False),
+        tp.StructField(name="prediction", dataType=tp.DoubleType(), nullable=False),
+    ])
+    
+    if DF.count() > 0:
+        df = DF.toPandas()
+        df["prediction"] = 0.0
+        
+        #* ----------------------------------------------------------------
+        assembler = VectorAssembler(inputCols=["prezzo"], outputCol="features")
+
+        for _, row in df.iterrows():
+            impianto = row["idImpianto"]
+            carb = row["carburante"]
+            regressor = regressors[impianto][carb]
+
+            tempDF = spark.createDataFrame([[row["prezzo"]]], schema=tp.StructType([tp.StructField(name="prezzo", dataType=tp.FloatType(), nullable=False)]))
+            tempDF = tempDF.drop("prediction")
+            tempDF = assembler.transform(tempDF)
+            tempDF = regressor.transform(tempDF)
+            tempDF = tempDF.drop("features")
+
+            df.loc[(df.idImpianto == impianto) & (df.carburante == carb), "prediction"] = tempDF.collect()[0]["prediction"]
+        #* ----------------------------------------------------------------
+
+        toRet = spark.createDataFrame(df, schema=finalSchema)
+        toRet = toRet.withColumn("@timestamp", fun.date_format(fun.current_timestamp(), "yyyy-MM-dd HH:mm:ss"))
+        toRet = toRet.withColumn("carburante", fun.when(toRet.carburante == 0, "Benzina").otherwise("Gasolio"))
+        
+        toRet = toRet.withColumn("Location", fun.array(toRet.Longitudine, toRet.Latitudine))
+        toRet = toRet.drop("Latitudine", "Longitudine")
+
+        toRet.write \
+            .option("checkpointLocation", "/save/location") \
+            .option("es.nodes", "elasticsearch") \
+            .format("es") \
+            .save(ELASTIC_INDEX)
+
+
 
 def initSpark():
     sc = SparkContext(appName = "OilPricePrediction")
@@ -43,15 +93,12 @@ def main(spark):
             .option("subscribe", KAFKA_TOPIC) \
             .load()
 
-    df = cleanStreamingDF(inputDF, anagrafica)      #* DATA CLEANING AND DEDUPLICATION
-    df = predictStreamingDF(df, modelFolder)    #* DATA PREDICTION
+    df = cleanStreamingDF(inputDF, anagrafica)   #* DATA CLEANING AND DEDUPLICATION
 
     #* EXECUTE
     df.writeStream \
-        .option("checkpointLocation", "/save/location") \
-        .option("es.nodes", "elasticsearch") \
-        .format("es") \
-        .start(ELASTIC_INDEX) \
+        .foreachBatch(do_all) \
+        .start() \
         .awaitTermination()
 
     spark.stop()
@@ -71,7 +118,6 @@ if __name__ == "__main__":
                 "carburante": {"type": "keyword"},
                 "prezzo": {"type": "float"},
                 "@timestamp": {"type": "date", "format": "yyyy-MM-dd HH:mm:ss"},
-                "original_timestamp": {"type": "date", "format": "epoch_millis"},
                 "prediction": {"type": "float"},
                 "Gestore": {"type": "text"},
                 "Bandiera": {"type": "keyword"},
@@ -91,6 +137,10 @@ if __name__ == "__main__":
 
     sc, spark = initSpark()
     es = createElasticIndex(ELASTIC_HOST, ELASTIC_INDEX, ES_MAPPING)
+    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+    
     anagrafica = spark.read.parquet(os.path.join(datasetFolder, "anagrafica_impianti_CT.parquet"))
-
+    regressors = getRegressors([x.idImpianto for x in anagrafica.select("idImpianto").distinct().collect()], modelFolder)
+    print("Regressors loaded.")
+    
     main(spark)
