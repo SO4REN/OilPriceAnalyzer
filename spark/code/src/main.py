@@ -35,7 +35,7 @@ def addPrediction(DF, batchID):
         regressors = getRegressors(impianti, (batchID == 1), modelFolder=modelFolder, spark=spark, datasetFolder=os.path.join(datasetFolder, "prezzi"))
         print("Regressors READY")
 
-        for _, row in df.iterrows():
+        for index, row in df.iterrows():
             impianto = row["idImpianto"]
             carb = row["carburante"]
             regressor = regressors[impianto][carb]
@@ -46,7 +46,7 @@ def addPrediction(DF, batchID):
             tempDF = regressor.transform(tempDF)
             tempDF = tempDF.drop("features")
 
-            df.loc[(df.idImpianto == impianto) & (df.carburante == carb), "prediction"] = tempDF.collect()[0]["prediction"]
+            df.at[index, "prediction"] = tempDF.collect()[0]["prediction"]
         #* ----------------------------------------------------------------
 
         toRet = spark.createDataFrame(df, schema=finalSchema)
