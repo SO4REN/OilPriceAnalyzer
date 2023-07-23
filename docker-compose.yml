@@ -87,7 +87,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:4040"]
       interval: 10s
       timeout: 10s
-      retries: 5 
+      retries: 20
     depends_on:
       kafkaTopic:
         condition: service_completed_successfully
