@@ -17,8 +17,8 @@ def train(trainDF):
 
 def getRegressors(impianti, cache = False, **kwargs):
     spark = kwargs["spark"] if "spark" in kwargs else None
-    modelFolder = kwargs["modelFolder"] if (cache and "modelFolder" in kwargs) else ""
-    datasetFolder = kwargs["datasetFolder"] if (not cache and "datasetFolder" in kwargs) else ""
+    modelFolder = kwargs["modelFolder"] if "modelFolder" in kwargs else ""
+    datasetFolder = kwargs["datasetFolder"] if "datasetFolder" in kwargs else ""
 
     regressors = dict.fromkeys(impianti)
     for key in regressors:
