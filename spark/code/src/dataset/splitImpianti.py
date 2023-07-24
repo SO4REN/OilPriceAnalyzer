@@ -25,49 +25,10 @@ def removeFirstLine(files):
                 f.writelines(data)
 
 
-def toSingleFile():
-    anagrafica = pd.read_parquet("anagrafica_impianti_CT.parquet")
-    impianti = anagrafica.idImpianto.unique()
-
-    df = pd.DataFrame(columns=["idImpianto", "carburante", "X_prezzo", "Y_prezzo"])
-
-    files = glob.glob("../../PrezziRaw/*.csv")
-    files.sort()
-
-    removeFirstLine(files)
-
-    for X, Y in zip(files, files[1:]):
-        dfX = pd.read_csv(X, sep=";", header=0, names=["idImpianto", "descCarburante", "prezzo", "isSelf", "dtComu"], on_bad_lines="skip")
-        dfY = pd.read_csv(Y, sep=";", header=0, names=["idImpianto", "descCarburante", "prezzo", "isSelf", "dtComu"], on_bad_lines="skip")
-
-        dfX = cleanPrezzi(dfX, anagrafica)
-        dfY = cleanPrezzi(dfY, anagrafica)
-
-        for impianto in impianti:
-            prezzoX = dfX[dfX.idImpianto == impianto][["descCarburante", "prezzo", "idImpianto"]]
-            prezzoY = dfY[dfY.idImpianto == impianto][["descCarburante", "prezzo", "idImpianto"]]
-
-            if prezzoX.empty or prezzoY.empty:
-                    continue
-            else:
-                for carb in (0, 1):
-                    xTarget = prezzoX[prezzoX.descCarburante == carb].prezzo.values[0] if not prezzoX[prezzoX.descCarburante == carb].empty else -1
-                    yTarget = prezzoY[prezzoY.descCarburante == carb].prezzo.values[0] if not prezzoY[prezzoY.descCarburante == carb].empty else -1
-                    
-                    newRow = pd.DataFrame({
-                                        "idImpianto": impianto,
-                                        "carburante": carb,
-                                        "X_prezzo": xTarget,
-                                        "Y_prezzo": yTarget},
-                                        columns=["idImpianto", "carburante", "X_prezzo", "Y_prezzo"], index=[0])
-                    df = pd.concat([df, newRow], ignore_index=True)
-    df.to_parquet("prezzi.parquet")
     
 def toMultipleFiles():
     anagrafica = pd.read_parquet("anagrafica_impianti_CT.parquet")
     impianti = anagrafica.idImpianto.unique()
-
-    # df = pd.DataFrame(columns=["idImpianto", "carburante", "X_prezzo", "Y_prezzo"])
 
     files = glob.glob("../../PrezziRaw/*.csv")
     files.sort()
@@ -111,7 +72,4 @@ def toMultipleFiles():
 
 
 if __name__ == "__main__":
-    # toSingleFile()
     toMultipleFiles()
-    
-    pass
