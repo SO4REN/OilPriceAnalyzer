@@ -1,7 +1,7 @@
 *.tgz
 *.csv
 *.parquet
-!anagrafica_impianti_CT.parquet
+# !anagrafica_impianti_CT.parquet
 # !prezzi.parquet
 */docker-compose.yml
 
