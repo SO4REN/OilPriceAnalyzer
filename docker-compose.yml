@@ -13,8 +13,8 @@ services:
       tap:
         ipv4_address: 10.0.100.10
     volumes:
-      # - $PWD/logstash/pipeline/http_poller_original.conf:/usr/share/logstash/pipeline/logstash.conf # original
-      - $PWD/logstash/pipeline/http_poller_simulation.conf:/usr/share/logstash/pipeline/logstash.conf #! for simulation
+      - $PWD/logstash/pipeline/http_poller_original.conf:/usr/share/logstash/pipeline/logstash.conf # original
+      # - $PWD/logstash/pipeline/http_poller_simulation.conf:/usr/share/logstash/pipeline/logstash.conf #! for simulation
     depends_on:
       kafkaTopic:
         condition: service_completed_successfully
