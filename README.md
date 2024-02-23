@@ -57,3 +57,6 @@ https://www.mimit.gov.it/images/exportCSV/prezzo_alle_8.csv
 Archivio dataset Training:
 https://www.mimit.gov.it/it/open-data/elenco-dataset/carburanti-archivio-prezzi
 
+
+## License
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
