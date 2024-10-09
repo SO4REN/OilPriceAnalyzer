@@ -32,7 +32,7 @@ def getRegressors(impianti, cache = False, **kwargs):
     else:
         print("Training regressors...")
         for impianto in impianti:
-            trainingDataset = spark.read.parquet(os.path.join(datasetFolder, str(impianto)))
+            trainingDataset = spark.read.parquet(os.path.join(datasetFolder, str(impianto) + ".parquet"))
             for carb in (0, 1):
                 trainDF = trainingDataset.filter(trainingDataset.carburante == carb)
                 regressors[impianto][carb] = train(trainDF)
@@ -43,7 +43,7 @@ def getRegressors(impianti, cache = False, **kwargs):
 
 def updateDataset(df, impianti, spark, datasetFolder):
     for impianto in impianti:
-        trainingDataset = spark.read.parquet(os.path.join(datasetFolder, str(impianto)))
+        trainingDataset = spark.read.parquet(os.path.join(datasetFolder, str(impianto) + ".parquet"))
         
         for carb in (0, 1):
             lastRow = trainingDataset.filter(trainingDataset.carburante == carb).orderBy(fun.desc("insertOrder")).limit(1)
@@ -52,4 +52,4 @@ def updateDataset(df, impianti, spark, datasetFolder):
 
             data = df[(df.idImpianto == impianto) & (df.carburante == carb)].prezzo.values[0] if not df[(df.idImpianto == impianto) & (df.carburante == carb)].empty else 0.0
             lastRow = lastRow.withColumn("Y_prezzo", fun.lit(data).cast(tp.DoubleType()))
-            lastRow.write.mode("append").parquet(os.path.join(datasetFolder, str(impianto)))
+            lastRow.write.mode("append").parquet(os.path.join(datasetFolder, str(impianto) + ".parquet"))
