@@ -1,8 +1,6 @@
-version: '3.7'
-
 services:
   logstash:
-    build: $PWD/logstash/
+    build: ./logstash/
     image: tap:logstash
     container_name: logstash
     environment:
@@ -13,8 +11,8 @@ services:
       tap:
         ipv4_address: 10.0.100.10
     volumes:
-      - $PWD/logstash/pipeline/http_poller_original.conf:/usr/share/logstash/pipeline/logstash.conf # original
-      # - $PWD/logstash/pipeline/http_poller_simulation.conf:/usr/share/logstash/pipeline/logstash.conf #! for simulation
+      - ./logstash/pipeline/http_poller_original.conf:/usr/share/logstash/pipeline/logstash.conf # original
+      # - ./logstash/pipeline/http_poller_simulation.conf:/usr/share/logstash/pipeline/logstash.conf #! for simulation
     depends_on:
       kafkaTopic:
         condition: service_completed_successfully
@@ -23,7 +21,7 @@ services:
 
 
   kafkaServer:
-    build: $PWD/kafka/
+    build: ./kafka/
     image: tap:kafka
     container_name: kafkaServer
     networks:
@@ -37,7 +35,7 @@ services:
 
 
   kafkaTopic:
-    build: $PWD/kafka/
+    build: ./kafka/
     image: tap:kafka
     container_name: kafkaTopic
     networks:
@@ -67,7 +65,7 @@ services:
 
 
   spark:
-    build: $PWD/spark/
+    build: ./spark/
     image: tap:spark
     container_name: spark
     deploy:
@@ -81,7 +79,7 @@ services:
     ports:
       - 4040:4040
     volumes:
-      - $PWD/spark/code/src/:/opt/code
+      - ./spark/code/src/:/opt/code
     entrypoint: "/opt/spark/bin/spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.0,org.elasticsearch:elasticsearch-spark-30_2.12:8.7.1 --master local[*] opt/code/main.py"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4040"]
@@ -113,7 +111,7 @@ services:
   kibana:
     container_name: kibana
     image: tap:kibana
-    build: $PWD/kibana/
+    build: ./kibana/
     networks:
       tap:
         ipv4_address: 10.0.100.52
@@ -121,7 +119,7 @@ services:
       - 5601:5601
 
   simulationServer:
-    build: $PWD/pythonSimulation
+    build: ./pythonSimulation
     image: tap:simulationServer
     container_name: simulationServer
     ports:
