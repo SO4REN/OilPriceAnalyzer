@@ -68,6 +68,8 @@ def toMultipleFiles():
                                         columns=["carburante", "X_prezzo", "Y_prezzo", "insertOrder"], index=[0])
                     df = pd.concat([df, newRow], ignore_index=True)
             countImpianti[impianto] += 1
+            if not os.path.exists("Prezzi"):
+                os.makedirs("Prezzi")
             df.to_parquet("Prezzi/{id}.parquet".format(id=impianto))
 
 
