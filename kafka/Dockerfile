@@ -13,4 +13,6 @@ ADD kafka-manager.sh ${KAFKA_DIR}/bin/kafka-manager
 
 ADD conf/kraft/* ${KAFKA_DIR}/config/kraft/
 
+RUN chmod +x ${KAFKA_DIR}/bin/kafka-manager
+
 ENTRYPOINT [ "kafka-manager" ]
