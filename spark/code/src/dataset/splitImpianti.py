@@ -45,8 +45,8 @@ def toMultipleFiles():
 
         for impianto in impianti:
             df = None
-            if os.path.exists("Prezzi/{id}.parquet".format(id=impianto)):
-                df = pd.read_parquet("Prezzi/{id}.parquet".format(id=impianto))
+            if os.path.exists("prezzi/{id}.parquet".format(id=impianto)):
+                df = pd.read_parquet("prezzi/{id}.parquet".format(id=impianto))
             else:
                 df = pd.DataFrame(columns=["carburante", "X_prezzo", "Y_prezzo", "insertOrder"])
             
@@ -68,9 +68,9 @@ def toMultipleFiles():
                                         columns=["carburante", "X_prezzo", "Y_prezzo", "insertOrder"], index=[0])
                     df = pd.concat([df, newRow], ignore_index=True)
             countImpianti[impianto] += 1
-            if not os.path.exists("Prezzi"):
-                os.makedirs("Prezzi")
-            df.to_parquet("Prezzi/{id}.parquet".format(id=impianto))
+            if not os.path.exists("prezzi"):
+                os.makedirs("prezzi")
+            df.to_parquet("prezzi/{id}.parquet".format(id=impianto))
 
 
 if __name__ == "__main__":
