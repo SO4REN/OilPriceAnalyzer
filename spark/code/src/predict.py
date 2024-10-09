@@ -52,4 +52,4 @@ def updateDataset(df, impianti, spark, datasetFolder):
 
             data = df[(df.idImpianto == impianto) & (df.carburante == carb)].prezzo.values[0] if not df[(df.idImpianto == impianto) & (df.carburante == carb)].empty else 0.0
             lastRow = lastRow.withColumn("Y_prezzo", fun.lit(data).cast(tp.DoubleType()))
-            lastRow.write.mode("append").parquet(os.path.join(datasetFolder, str(impianto) + ".parquet"))
+            lastRow.write.mode("append").parquet(os.path.join(datasetFolder, str(impianto)))
