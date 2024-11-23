@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 from pyspark import SparkContext
 from elasticsearch import Elasticsearch
@@ -145,10 +146,15 @@ if __name__ == "__main__":
     #*-----------------------------------------------------------------
 
     mainFolder = os.path.dirname(os.path.realpath(__file__))
+    datasetFolder = os.path.join(mainFolder, "dataset")
 
     tempdir = tempfile.TemporaryDirectory()
     modelFolder = os.path.join(tempdir.name, "model")
-    datasetFolder = os.path.join(mainFolder, "dataset")
+    if os.path.exists(modelFolder):
+        shutil.rmtree(modelFolder)
+        os.makedirs(modelFolder)
+    else:
+        os.makedirs(modelFolder)
 
     sc, spark = initSpark()
     es = createElasticIndex(ELASTIC_HOST, ELASTIC_INDEX, ES_MAPPING)
