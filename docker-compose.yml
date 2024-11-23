@@ -11,8 +11,8 @@ services:
       tap:
         ipv4_address: 10.0.100.10
     volumes:
-      - ./logstash/pipeline/http_poller_original.conf:/usr/share/logstash/pipeline/logstash.conf # original
-      # - ./logstash/pipeline/http_poller_simulation.conf:/usr/share/logstash/pipeline/logstash.conf #! for simulation
+      # - ./logstash/pipeline/http_poller_original.conf:/usr/share/logstash/pipeline/logstash.conf # original
+      - ./logstash/pipeline/http_poller_simulation.conf:/usr/share/logstash/pipeline/logstash.conf #! for simulation
     depends_on:
       kafkaTopic:
         condition: service_completed_successfully
@@ -48,20 +48,13 @@ services:
       - kafkaServer
 
 
-  kafkaUI:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafkaUI
-    ports:
-      - 8080:8080
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafkaServer:9092
-      LOGGING_LEVEL_ROOT: error
-      LOGGING_LEVEL_COM_PROVECTUS: error
-    networks: 
-      - tap
-    depends_on:
-      - kafkaServer
+  dataset:
+    build: ./spark/code/dataset/
+    image: tap:dataset
+    container_name: dataset
+    volumes:
+      - ./spark/code/dataset/:/opt/code
+    command: "python /opt/code/main.py"
 
 
   spark:
@@ -79,7 +72,7 @@ services:
     ports:
       - 4040:4040
     volumes:
-      - ./spark/code/src/:/opt/code
+      - ./spark/code/:/opt/code
     entrypoint: "/opt/spark/bin/spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.0,org.elasticsearch:elasticsearch-spark-30_2.12:8.7.1 --master local[*] opt/code/main.py"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4040"]
@@ -88,6 +81,8 @@ services:
       retries: 20
     depends_on:
       kafkaTopic:
+        condition: service_completed_successfully
+      dataset:
         condition: service_completed_successfully
 
 
@@ -117,6 +112,7 @@ services:
         ipv4_address: 10.0.100.52
     ports:
       - 5601:5601
+
 
   simulationServer:
     build: ./pythonSimulation

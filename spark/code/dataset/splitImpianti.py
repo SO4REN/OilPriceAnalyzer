@@ -2,6 +2,8 @@ import glob
 import pandas as pd
 import os
 
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def cleanPrezzi(df, anagrafica):
@@ -26,11 +28,11 @@ def removeFirstLine(files):
 
 
     
-def toMultipleFiles():
-    anagrafica = pd.read_parquet("anagrafica_impianti_CT.parquet")
+def toMultipleFiles(inputPath, outputPath, anagraficaPath):
+    anagrafica = pd.read_parquet(anagraficaPath)
     impianti = anagrafica.idImpianto.unique()
 
-    files = glob.glob("../../PrezziRaw/*.csv")
+    files = glob.glob(os.path.join(inputPath, "*.csv"))
     files.sort()
 
     removeFirstLine(files)
@@ -45,8 +47,8 @@ def toMultipleFiles():
 
         for impianto in impianti:
             df = None
-            if os.path.exists("prezzi/{id}.parquet".format(id=impianto)):
-                df = pd.read_parquet("prezzi/{id}.parquet".format(id=impianto))
+            if os.path.exists(os.path.join(outputPath, "{id}.parquet".format(id=impianto))):
+                df = pd.read_parquet(os.path.join(outputPath, "{id}.parquet".format(id=impianto)))
             else:
                 df = pd.DataFrame(columns=["carburante", "X_prezzo", "Y_prezzo", "insertOrder"])
             
@@ -68,10 +70,7 @@ def toMultipleFiles():
                                         columns=["carburante", "X_prezzo", "Y_prezzo", "insertOrder"], index=[0])
                     df = pd.concat([df, newRow], ignore_index=True)
             countImpianti[impianto] += 1
-            if not os.path.exists("prezzi"):
-                os.makedirs("prezzi")
-            df.to_parquet("prezzi/{id}.parquet".format(id=impianto))
-
-
-if __name__ == "__main__":
-    toMultipleFiles()
+            if not os.path.exists(outputPath):
+                os.makedirs(outputPath)
+            df.to_parquet(os.path.join(outputPath, "{id}.parquet".format(id=impianto)))
+        print("Processed:", X)

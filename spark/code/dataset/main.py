@@ -1,7 +1,10 @@
 import os
+import shutil
 import tarfile
 import tempfile
 import requests
+
+from splitImpianti import toMultipleFiles
 
 
 if __name__ == "__main__":
@@ -26,4 +29,12 @@ if __name__ == "__main__":
             tar.extractall(tmpdirname)
             tar.close()
             print("EXTRACTED")
-        print(os.listdir(os.path.join(tmpdirname, "ftproot", "osservaprezzi")))
+
+        csv_path = os.path.join(tmpdirname, "ftproot", "osservaprezzi", "copied")
+        anagrafica_path = os.path.join(os.path.dirname(__file__), "anagrafica_impianti_CT.parquet")
+        output_path = os.path.join(os.path.dirname(__file__), "prezzi")
+
+        if os.path.exists(output_path):
+            shutil.rmtree(output_path)
+            os.makedirs(output_path)
+        toMultipleFiles(csv_path, output_path, anagrafica_path)
