@@ -7,18 +7,23 @@ import requests
 from splitImpianti import toMultipleFiles
 
 
+def download(link):
+    print("DOWNLOADING")
+    response = requests.get(link)
+    if response.status_code == 200:
+        print("SUCCESS")
+        return response.content
+    else:
+        raise Exception("ERROR")
+
+
 if __name__ == "__main__":
     link_path = os.path.join(os.path.dirname(__file__), "README")
 
     response = None
     with open(link_path, "r") as f:
         link = f.readline().strip()
-        response = requests.get(link)
-        if response.status_code == 200:
-            print("SUCCESS")
-            response = response.content
-        else:
-            raise Exception("ERROR")
+        response = download(link)
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         targz_file = os.path.join(tmpdirname, "raw.tar.gz")
