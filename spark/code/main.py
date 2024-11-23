@@ -1,4 +1,5 @@
 import os
+import tempfile
 from pyspark import SparkContext
 from elasticsearch import Elasticsearch
 from pyspark.sql.session import SparkSession
@@ -144,7 +145,9 @@ if __name__ == "__main__":
     #*-----------------------------------------------------------------
 
     mainFolder = os.path.dirname(os.path.realpath(__file__))
-    modelFolder = os.path.join(mainFolder, "model")
+
+    tempdir = tempfile.TemporaryDirectory()
+    modelFolder = os.path.join(tempdir.name, "model")
     datasetFolder = os.path.join(mainFolder, "dataset")
 
     sc, spark = initSpark()
